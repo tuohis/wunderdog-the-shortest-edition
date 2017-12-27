@@ -1,12 +1,16 @@
 import logging
 
-def get_logger(name, output_dir=None):
+DEBUG = logging.DEBUG
+INFO = logging.INFO
+WARNING = logging.WARNING
+
+def get_logger(name, level=WARNING, output_dir=None):
     logger = logging.getLogger(name)
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(level)
      
     # create console handler and set level to info
     handler = logging.StreamHandler()
-    handler.setLevel(logging.INFO)
+    handler.setLevel(level)
     formatter = logging.Formatter("%(levelname)s - %(message)s")
     handler.setFormatter(formatter)
     logger.addHandler(handler)
