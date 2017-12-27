@@ -37,26 +37,35 @@ def get_dictionary(text):
         logger.info("Dictionary composing took %s", datetime.now() - start)
 
 def get_output_lines(dictionary):
-    output_lines = []
+    full_output_lines = []
+    uneven_output_lines = []
     while dictionary:
         line_words = []
         line_remaining = 80
-        while dictionary and line_remaining > 0:
-            key = get_key(dictionary, max_length=line_remaining)
-            word = dictionary[key].pop()
-            line_words.append(word)
-            line_remaining -= len(word) + 1
-            if not dictionary[key]:
-                del dictionary[key]
+        try:
+            while line_remaining > 0:
+                key = get_key(dictionary, max_length=line_remaining)
+                word = dictionary[key].pop()
+                line_words.append(word)
+                line_remaining -= key + 1
+                if not dictionary[key]:
+                    del dictionary[key]
+        except ValueError as err:
+            if dictionary:
+                logger.warning("Error when parsing: %s", err)
+        finally:
+            if line_remaining == -1:
+                full_output_lines.append(line_words)
+            else:
+                uneven_output_lines.append(line_words)
 
-        output_lines.append(' '.join(line_words))
-    return output_lines
+    return full_output_lines, uneven_output_lines
 
 def get_key(dictionary, max_length=80):
     keys = dictionary.keys()
-    if max_length in keys:
+    if max_length in dictionary.keys():
         return max_length
-    return max(filter(lambda x: x <= max_length, keys))
+    return max(filter(lambda x: x <= max_length, dictionary.keys()))
 
 def print_output_stats(output_lines):
     logger.info("Output lines count: %d", len(output_lines))
@@ -64,12 +73,21 @@ def print_output_stats(output_lines):
     logger.info("%s", lengths)
 
 def main():
-    dictionary = get_dictionary(get_source_data())
-    logger.info("Dictionary shape:")
-    for key in sorted(dictionary.keys()):
-        logger.info("  %d: %d words", key, len(dictionary[key]))
+    data = get_source_data()
+    output_lines = []
+    for _ in range(5):
+        dictionary = get_dictionary(data)
+        logger.info("Dictionary shape:")
+        for key in sorted(dictionary.keys()):
+            logger.info("  %d: %d words", key, len(dictionary[key]))
 
-    output_lines = get_output_lines(dictionary)
-    print_output_stats(output_lines)
+        full_output_lines, uneven_output_lines = get_output_lines(dictionary)
+        logger.info("Line count: full=%d, uneven=%d, total=%d", len(full_output_lines), len(uneven_output_lines), len(full_output_lines) + len(uneven_output_lines))
+
+        output_lines += full_output_lines
+        data = ' '.join((' '.join(l) for l in uneven_output_lines))
+
+    output_lines += uneven_output_lines
+    logger.info(' '.join(uneven_output_lines[0]))
 
 main()
