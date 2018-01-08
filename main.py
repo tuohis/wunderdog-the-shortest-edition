@@ -29,6 +29,8 @@ def get_dictionary(text):
 
     return dictionary
 
+class NoSequenceFoundError(ValueError):
+    pass
 
 def get_output_lines(dictionary):
     word_count_dict = {key: len(dictionary[key]) for key in dictionary}
@@ -61,7 +63,7 @@ def get_output_lines(dictionary):
     return full_output_lines, uneven_output_lines
 
 
-def get_keys(word_count_dict, max_length=80, recursion_depth=0):
+def get_keys(word_count_dict, max_length=80):
     """
     Input data structure:
     {
@@ -69,33 +71,36 @@ def get_keys(word_count_dict, max_length=80, recursion_depth=0):
         ...
     }
     """
-    keys = sorted(filter(lambda x: x <= max_length, word_count_dict.keys()), reverse=True)
-    keys_max = max(keys)
+    def get_keys_recursive(word_count_dict, max_length=80):
+        keys = sorted(filter(lambda x: x <= max_length, word_count_dict.keys()), reverse=True)
+        try:
+            keys_max = max(keys)
+        except ValueError:
+            raise NoSequenceFoundError("Empty dict")
 
-    if max_length <= keys_max and max_length in keys:
-        return [max_length]
-    else:
-        # Find a sequence of keys which add up to max_length
-        key_iter = iter(keys)
-        while True:
-            try:
-                biggest_key = next(key_iter)
-            except StopIteration:
-                if recursion_depth == 0:
-                    return keys[0:1]
-                else:
-                    raise ValueError("Couldn't find a sequence")
+        if max_length <= keys_max and max_length in keys:
+            return [max_length]
+        else:
+            # Find a sequence of keys which add up to max_length
+            for biggest_key in keys:
+                try:
+                    word_count_dict_copy = {key: word_count_dict[key] for key in keys if key <= biggest_key}
+                    if word_count_dict_copy[biggest_key] == 1:
+                        del word_count_dict_copy[biggest_key]
+                    else:
+                        word_count_dict_copy[biggest_key] -= 1
 
-            try:
-                word_count_dict_copy = {key: word_count_dict[key] for key in keys if key <= biggest_key}
-                if word_count_dict_copy[biggest_key] == 1:
-                    del word_count_dict_copy[biggest_key]
-                else:
-                    word_count_dict_copy[biggest_key] -= 1
+                    return [biggest_key] + get_keys_recursive(word_count_dict_copy, max_length - biggest_key - 1)
+                except NoSequenceFoundError:
+                    pass
 
-                return [biggest_key] + get_keys(word_count_dict_copy, max_length - biggest_key - 1, recursion_depth + 1)
-            except ValueError:
-                pass
+        raise NoSequenceFoundError("Couldn't find a sequence")
+
+    try:
+        return get_keys_recursive(word_count_dict, max_length)
+    except NoSequenceFoundError:
+        return [max(filter(lambda k: k <= max_length, word_count_dict))]
+
 
 def parse_args():
     parser = argparse.ArgumentParser()
