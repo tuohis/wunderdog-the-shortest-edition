@@ -3,7 +3,6 @@
 @copyright Mikko Tuohimaa 2018
 """
 import argparse
-from datetime import datetime
 import urllib.request
 
 import log
@@ -26,8 +25,6 @@ def parse_args():
     return parser.parse_args()
 
 def main():
-    start = datetime.now()
-
     args = parse_args()
 
     data = get_source_data(args.source_file)
