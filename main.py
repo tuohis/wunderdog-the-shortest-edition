@@ -113,7 +113,7 @@ def get_keys(word_count_dict, max_length=80, recursion_depth=0):
 def print_output_stats(output_lines):
     logger.info("Output lines count: %d", len(output_lines))
     lengths = Counter([len(l) for l in output_lines])
-    logger.info("%s", lengths)
+    logger.info("Line lengths count: %s", lengths)
 
 def print_dictionary_stats(dictionary):
     logger.debug("Dictionary shape:")
