@@ -10,8 +10,12 @@ class WordPacker(object):
         self.line_length = line_length
 
     def pack(self, text):
+        """
+        @type text: str
+        @rtype: generator(str)
+        """
         dictionary = self.get_dictionary(text)
-        return self.get_output_lines(dictionary, self.line_length)
+        return self.generate_output_lines(dictionary, self.line_length)
 
     @staticmethod
     def get_dictionary(text):
@@ -26,9 +30,8 @@ class WordPacker(object):
         return dictionary
 
     @classmethod
-    def get_output_lines(cls, dictionary, line_length):
+    def generate_output_lines(cls, dictionary, line_length):
         word_count_dict = {key: len(dictionary[key]) for key in dictionary}
-        output_lines = []
 
         while dictionary:
             line_words = []
@@ -49,9 +52,8 @@ class WordPacker(object):
             except ValueError:
                 pass
             finally:
-                output_lines.append(' '.join(line_words))
+                yield ' '.join(line_words)
 
-        return output_lines
 
     @staticmethod
     def get_keys(word_count_dict, max_length=80):

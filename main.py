@@ -33,9 +33,7 @@ def main():
 
     if args.test:
         logger = log.AlastaloLogger(__file__, level=log.DEBUG)
-        logger.print_output_stats(output_lines)
-
-        logger.debug("Script completed in %s", datetime.now() - start)
+        logger.print_output_stats(list(output_lines))
 
     else:
         for l in output_lines:
