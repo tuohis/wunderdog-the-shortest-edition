@@ -5,8 +5,9 @@
 import argparse
 from collections import Counter
 from datetime import datetime
-import log
 import urllib.request
+
+import log
 
 LOGLEVEL = log.WARNING
 logger = log.get_logger(__file__, level=LOGLEVEL)
@@ -43,6 +44,7 @@ def get_dictionary(text):
         logger.debug("Dictionary composing took %s", datetime.now() - start)
 
 def get_output_lines(dictionary):
+    word_count_dict = {key: len(dictionary[key]) for key in dictionary}
     full_output_lines = []
     uneven_output_lines = []
     while dictionary:
@@ -50,14 +52,18 @@ def get_output_lines(dictionary):
         line_remaining = 80
         try:
             while line_remaining > 0:
-                keys = get_keys(dictionary, max_length=line_remaining)
+                keys = get_keys(word_count_dict, max_length=line_remaining)
                 for key in keys:
                     word = dictionary[key].pop()
                     line_words.append(word)
                     line_remaining -= key + 1
                     if not dictionary[key]:
                         del dictionary[key]
-        except ValueError as err:
+                        del word_count_dict[key]
+                    else:
+                        word_count_dict[key] -= 1
+
+        except ValueError:
             pass
         finally:
             if line_remaining == -1:
@@ -67,27 +73,42 @@ def get_output_lines(dictionary):
 
     return full_output_lines, uneven_output_lines
 
-def get_keys(dictionary, max_length=80):
-    keys = sorted(filter(lambda x: x <= max_length, dictionary.keys()), reverse=True)
+
+def get_keys(word_count_dict, max_length=80, recursion_depth=0):
+    """
+    Input data structure:
+    {
+        <word length>: <word count>,
+        ...
+    }
+    """
+    keys = sorted(filter(lambda x: x <= max_length, word_count_dict.keys()), reverse=True)
     keys_max = max(keys)
 
     if max_length <= keys_max and max_length in keys:
         return [max_length]
-    elif max_length >= 2 * keys_max:
-        return [keys_max]
     else:
         # Find a sequence of keys which add up to max_length
         key_iter = iter(keys)
         while True:
             try:
                 biggest_key = next(key_iter)
-                new_keys = [biggest_key] + get_keys(dictionary, max_length - biggest_key - 1)
-                return new_keys
+            except StopIteration:
+                if recursion_depth == 0:
+                    return keys[0:1]
+                else:
+                    raise ValueError("Couldn't find a sequence")
+
+            try:
+                word_count_dict_copy = {key: word_count_dict[key] for key in keys if key <= biggest_key}
+                if word_count_dict_copy[biggest_key] == 1:
+                    del word_count_dict_copy[biggest_key]
+                else:
+                    word_count_dict_copy[biggest_key] -= 1
+
+                return [biggest_key] + get_keys(word_count_dict_copy, max_length - biggest_key - 1, recursion_depth + 1)
             except ValueError:
                 pass
-            except StopIteration:
-                break
-        return keys[0:1]
 
 def print_output_stats(output_lines):
     logger.info("Output lines count: %d", len(output_lines))
@@ -122,13 +143,6 @@ def main():
     if args.test:
         print_dictionary_stats(dictionary)
         print_output_stats(output_lines)
-
-        logger.debug("Analyzing incomplete lines..")
-        dictionary = get_dictionary(' '.join([' '.join(l) for l in uneven_output_lines]))
-        print_dictionary_stats(dictionary)
-
-        full_output_lines, uneven_output_lines = get_output_lines(dictionary)
-        print_output_stats([' '.join(l) for l in full_output_lines + uneven_output_lines])
 
         logger.debug("Script completed in %s", datetime.now() - start)
 
