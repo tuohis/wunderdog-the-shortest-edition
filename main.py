@@ -2,22 +2,27 @@
 """
 @copyright Mikko Tuohimaa 2017
 """
+import argparse
 from collections import Counter
 from datetime import datetime
 import log
 import urllib.request
 
-LOGLEVEL = log.INFO
+LOGLEVEL = log.WARNING
 logger = log.get_logger(__file__, level=LOGLEVEL)
 
-def get_source_data():
-    logger.debug("Fetching raw data")
-    url = 'https://raw.githubusercontent.com/wunderdogsw/wunderpahkina-vol8/master/alastalon_salissa.txt'
+def get_source_data(source_file=None):
     start = datetime.now()
     try:
-        response = urllib.request.urlopen(url)
-        data = response.read()
-        return data.decode('utf-8')
+        if source_file:
+            with open(source_file, 'r') as f:
+                return f.read()
+        else:
+            logger.debug("Fetching raw data")
+            url = 'https://raw.githubusercontent.com/wunderdogsw/wunderpahkina-vol8/master/alastalon_salissa.txt'
+            response = urllib.request.urlopen(url)
+            data = response.read()
+            return data.decode('utf-8')
     finally:
         logger.debug("Data fetching took %s", datetime.now() - start)
 
@@ -96,17 +101,41 @@ def print_dictionary_stats(dictionary):
     for key in sorted(dictionary.keys()):
         logger.debug("  %d: %d words", key, len(dictionary[key]))
 
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('source_file', type=str, nargs='?', default=None, help='Source text file name (or omit for fresh download)')
+    parser.add_argument('--test', action='store_true', default=False, help='Print output stats instead of full output')
+    return parser.parse_args()
+
 def main():
-    data = get_source_data()
+    start = datetime.now()
+
+    args = parse_args()
+    if args.test:
+        logger = log.get_logger(__file__, level=log.DEBUG)
+
+    data = get_source_data(args.source_file)
     dictionary = get_dictionary(data)
-    print_dictionary_stats(dictionary)
 
     full_output_lines, uneven_output_lines = get_output_lines(dictionary)
 
     output_lines = [' '.join(l) for l in full_output_lines + uneven_output_lines]
-    print_output_stats(output_lines)
 
-    dictionary = get_dictionary(' '.join([' '.join(l) for l in uneven_output_lines]))
-    print_dictionary_stats(dictionary)
+    if args.test:
+        print_dictionary_stats(dictionary)
+        print_output_stats(output_lines)
+
+        logger.debug("Analyzing incomplete lines..")
+        dictionary = get_dictionary(' '.join([' '.join(l) for l in uneven_output_lines]))
+        print_dictionary_stats(dictionary)
+
+        full_output_lines, uneven_output_lines = get_output_lines(dictionary)
+        print_output_stats(full_output_lines + uneven_output_lines)
+
+        logger.debug("Script completed in %s", datetime.now() - start)
+
+    else:
+        for l in output_lines:
+            print(l)
 
 main()
