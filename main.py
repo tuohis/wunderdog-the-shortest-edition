@@ -34,8 +34,8 @@ class NoSequenceFoundError(ValueError):
 
 def get_output_lines(dictionary):
     word_count_dict = {key: len(dictionary[key]) for key in dictionary}
-    full_output_lines = []
-    uneven_output_lines = []
+    output_lines = []
+
     while dictionary:
         line_words = []
         line_remaining = 80
@@ -55,12 +55,9 @@ def get_output_lines(dictionary):
         except ValueError:
             pass
         finally:
-            if line_remaining == -1:
-                full_output_lines.append(line_words)
-            else:
-                uneven_output_lines.append(line_words)
+            output_lines.append(' '.join(line_words))
 
-    return full_output_lines, uneven_output_lines
+    return output_lines
 
 
 def get_keys(word_count_dict, max_length=80):
@@ -116,9 +113,7 @@ def main():
     data = get_source_data(args.source_file)
     dictionary = get_dictionary(data)
 
-    full_output_lines, uneven_output_lines = get_output_lines(dictionary)
-
-    output_lines = [' '.join(l) for l in full_output_lines + uneven_output_lines]
+    output_lines = get_output_lines(dictionary)
 
     if args.test:
         logger = log.AlastaloLogger(__file__, level=log.DEBUG)
