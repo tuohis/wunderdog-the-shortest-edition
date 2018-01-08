@@ -39,4 +39,5 @@ def main():
         for l in output_lines:
             print(l)
 
-main()
+if __name__ == '__main__':
+    main()
