@@ -58,9 +58,7 @@ def get_output_lines(dictionary):
                     if not dictionary[key]:
                         del dictionary[key]
         except ValueError as err:
-            if dictionary:
-                #logger.warning("Error when parsing: %s", err)
-                pass
+            pass
         finally:
             if line_remaining == -1:
                 full_output_lines.append(line_words)
@@ -130,7 +128,7 @@ def main():
         print_dictionary_stats(dictionary)
 
         full_output_lines, uneven_output_lines = get_output_lines(dictionary)
-        print_output_stats(full_output_lines + uneven_output_lines)
+        print_output_stats([' '.join(l) for l in full_output_lines + uneven_output_lines])
 
         logger.debug("Script completed in %s", datetime.now() - start)
 
