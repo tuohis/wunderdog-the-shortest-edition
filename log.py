@@ -1,32 +1,32 @@
+"""
+@copyright Mikko Tuohimaa 2018
+"""
+
+from collections import Counter
 import logging
 
 DEBUG = logging.DEBUG
 INFO = logging.INFO
 WARNING = logging.WARNING
 
-def get_logger(name, level=WARNING, output_dir=None):
-    logger = logging.getLogger(name)
-    logger.setLevel(level)
-     
-    # create console handler and set level to info
-    handler = logging.StreamHandler()
-    handler.setLevel(level)
-    formatter = logging.Formatter("%(levelname)s - %(message)s")
-    handler.setFormatter(formatter)
-    logger.addHandler(handler)
+class AlastaloLogger(logging.Logger):
+    def __init__(self, name, level=WARNING):
+        super().__init__(logging.getLogger(name))
+        self.setLevel(level)
 
-    return logger
+        # create console handler and set level to info
+        handler = logging.StreamHandler()
+        handler.setLevel(level)
+        formatter = logging.Formatter("%(levelname)s - %(message)s")
+        handler.setFormatter(formatter)
+        self.addHandler(handler)
 
-    # create error file handler and set level to error
-    # handler = logging.FileHandler(os.path.join(output_dir, "error.log"),"w", encoding=None, delay="true")
-    # handler.setLevel(logging.ERROR)
-    # formatter = logging.Formatter("%(levelname)s - %(message)s")
-    # handler.setFormatter(formatter)
-    # logger.addHandler(handler)
- 
-    # create debug file handler and set level to debug
-    # handler = logging.FileHandler(os.path.join(output_dir, "all.log"),"w")
-    # handler.setLevel(logging.DEBUG)
-    # formatter = logging.Formatter("%(levelname)s - %(message)s")
-    # handler.setFormatter(formatter)
-    # logger.addHandler(handler)
+    def print_output_stats(self, output_lines):
+        self.info("Output lines count: %d", len(output_lines))
+        lengths = Counter([len(l) for l in output_lines])
+        self.info("Line lengths count: %s", lengths)
+
+    def print_dictionary_stats(self, dictionary):
+        self.debug("Dictionary shape:")
+        for key in sorted(dictionary.keys()):
+            self.debug("  %d: %d words", key, len(dictionary[key]))
